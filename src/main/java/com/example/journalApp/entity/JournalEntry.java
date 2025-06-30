@@ -1,5 +1,6 @@
 package com.example.journalApp.entity;
 
+import com.example.journalApp.enums.Sentiment;
 import java.time.LocalDateTime;
 import java.util.Date;
 import lombok.Data;
@@ -23,5 +24,6 @@ public class JournalEntry {
   private String content;
 
   private LocalDateTime date;
+  private Sentiment sentiment;
 
 }
