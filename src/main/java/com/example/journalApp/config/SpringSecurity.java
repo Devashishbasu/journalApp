@@ -1,5 +1,6 @@
 package com.example.journalApp.config;
 
+import com.example.journalApp.filter.JwtFilter;
 import com.example.journalApp.service.UserDetailsServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -12,9 +13,12 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
 
 @Configuration
 @EnableWebSecurity
@@ -27,14 +31,23 @@ public class SpringSecurity {
     @Autowired
     private UserDetailsServiceImpl userDetailsService;
 
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http)
-        throws Exception {
+    @Autowired
+    private JwtFilter jwtFilter;
 
-      return http.authorizeHttpRequests(
-              request -> request.requestMatchers("/public/**").permitAll().requestMatchers("/journal/**", "/user/**").authenticated().requestMatchers("/admin/**").hasRole("ADMIN").anyRequest().authenticated())
-          .httpBasic(Customizer.withDefaults()).csrf(AbstractHttpConfigurer::disable).build();
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+      http.csrf(AbstractHttpConfigurer::disable)
+          .authorizeHttpRequests(request -> request
+              .requestMatchers("/public/**").permitAll()
+              .requestMatchers("/journal/**", "/user/**").authenticated()
+              .requestMatchers("/admin/**").hasRole("ADMIN")
+              .anyRequest().authenticated())
+          .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+          .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+
+      return http.build();
     }
+
 
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
@@ -54,5 +67,7 @@ public class SpringSecurity {
     public PasswordEncoder passwordEncoder() {
       return new BCryptPasswordEncoder();
     }
+
+
   }
 }
